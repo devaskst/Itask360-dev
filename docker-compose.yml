@@ -1,0 +1,36 @@
+version: '3.9'
+
+services:
+  pg-dev:
+    image: postgres
+    container_name: pg-dev
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - ${POSTGRES_PORT:-5434}:5432
+    networks:
+      - global
+  
+  celery-dev:
+    container_name: celery-dev
+    build:
+      context: ./celery-dev
+    ports:
+      - "5104:5000"
+    volumes:
+      - ./celery-dev:/code
+      - type: bind
+        source: ./.env
+        target: /code/.env
+    command: python3 app.py
+    depends_on:
+      - pg-dev
+    networks:
+      - global
+
+networks:
+  global:
+    name: global
