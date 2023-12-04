@@ -345,6 +345,10 @@ class StepSession:
         return self._name
 
     @property
+    def code(self):
+        return self._code
+
+    @property
     def description(self):
         return self._description
 
@@ -476,11 +480,11 @@ class WidgetSession:
             "steps": {step.guid: step.get_json() for step in self._steps} if self._steps is not None else {}
         }
 
-    def get_step(self, code: str):
+    def get_step(self, code: str) -> StepSession:
         found_step = next(filter(lambda x: x.code == code, self.steps), None)
         return found_step
 
-    def get_current_step(self):
+    def get_current_step(self) -> StepSession:
         found_step = next(filter(lambda x: x.guid == self.current_step, self.steps), None)
         return found_step
 
