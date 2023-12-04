@@ -1,30 +1,40 @@
 
 import json
 import logging
+import importlib
 from pathlib import Path
 
 import requests
 from celery import Celery
 
 from appdir.classes import *
+
 from config import CeleryConfig
-
 config = CeleryConfig()
-
 app = Celery('celery')
-
 app.config_from_object(config)
+
 
 application_path = Path('/code/applications')
 application_packages = [str(x)[6:].replace('/', '.')
                         for x in application_path.glob('*/*')
                         if x.is_dir() and not str(x.name).startswith("__")]
 app.autodiscover_tasks(packages=application_packages, related_name='action', force=True)
+application_catalogs = [x for x in application_path.glob('*/models.py') if x.is_file()]
 
 webhooks_path = Path('/code/webhooks')
 webhooks_packages = [str(x)[6:].replace('/', '.')
                      for x in webhooks_path.glob('*/*')
                      if x.is_dir() and not str(x.name).startswith("__")]
+
+webhook_catalogs = [x for x in webhooks_path.glob('*/models.py') if x.is_file()]
+for model_path in set().union(application_catalogs, webhook_catalogs):
+    model_pythonic_path = str(model_path)[6:].replace('/', '.')[:-3]
+    module = importlib.import_module(model_pythonic_path)
+    # try:
+    #     module.create_all_tables()
+    # except:
+
 app.autodiscover_tasks(packages=webhooks_packages, related_name='action', force=True)
 
 webhook_tasks = []
@@ -42,9 +52,7 @@ register_tasks = requests.post(f"{app.conf.API_URL}/register_tasks",
                                                 "webhook_task_codes": webhook_tasks}),
                                headers=app.conf.api_headers,
                                timeout=120)
-
 if register_tasks.status_code != 200 and register_tasks.json()['code'] != 0:
-    logging.error(register_tasks.json())
     raise SystemError('Celery not working!')
 
 
@@ -63,7 +71,6 @@ def change_session_status(widget_session_guid: str,
         "state": state,
         "action_type": action_type,
         "retval": {
-            "next_step": response.next_step,
             "status": response.status.value
             }
         }

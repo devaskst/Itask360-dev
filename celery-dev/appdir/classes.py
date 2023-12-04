@@ -27,6 +27,8 @@ class Item:
         self.value = kwargs['value']
         self.checked = kwargs['checked']
         self.style = kwargs['style']
+        self.description = kwargs.get('description', None)
+        self.describe = kwargs.get('describe', None)
 
     def __str__(self) -> str:
         return f'<{self.__class__.__name__}: {self.value}>'
@@ -139,7 +141,7 @@ class Calendar(BaseControl):
     def get_json(self):
         upper_json = super().get_json()
         return upper_json | {
-            "value": self.value.isoformat(),
+            "value": self.value.isoformat() if self.value is not None else None,
             "default_value": self.default_value
         }
 
@@ -265,7 +267,7 @@ class DataView(BaseControl):
     def pages(self):
         return self._pages
 
-    @rows.setter
+    @pages.setter
     def pages(self, value: list):
         self._pages = value
         self._describe['pages'] = value
@@ -281,6 +283,34 @@ class FileDownload(BaseControl):
         super().__init__(**kwargs)
         self.file_id = kwargs['url']
 
+class Alert(BaseControl):
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.value = kwargs['value']
+        self.default_value = kwargs['default_value']
+
+    def get_json(self):
+        upper_json = super().get_json()
+        return upper_json | {
+            "value": self.value,
+            "default_value": self.default_value
+        }
+
+class Comment(BaseControl):
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.value = kwargs['value']
+        self.default_value = kwargs['default_value']
+
+    def get_json(self):
+        upper_json = super().get_json()
+        return upper_json | {
+            "value": self.value,
+            "default_value": self.default_value
+        }
+
 _control_types = {
     "text_box": TextBox,
     "calendar": Calendar,
@@ -290,17 +320,18 @@ _control_types = {
     "group_list": GroupList,
     "tree_view": TreeView,
     "data_view": DataView,
-    "file_download": FileDownload
+    "file_download": FileDownload,
+    "alert": Alert,
+    "comment": Comment
 }
 
 class StepSession:
 
-    def __init__(self, guid: str, name: str,
-                 order: int, description: str,
-                 controls=None) -> None:
+    def __init__(self, guid: str, name: str, code: str,
+                 description: str|None, controls=None) -> None:
         self._guid = guid
         self._name = name
-        self._order = order
+        self._code = code
         self._description = description
         self._controls = [_control_types[control['type']](**control)
                           for control in controls] if controls is not None else []
@@ -310,12 +341,12 @@ class StepSession:
         return self._guid
 
     @property
-    def order(self):
-        return self._order
-
-    @property
     def name(self):
         return self._name
+
+    @property
+    def code(self):
+        return self._code
 
     @property
     def description(self):
@@ -331,17 +362,18 @@ class StepSession:
     def __repr__(self) -> str:
         return f'<StepSession: {self.name}>'
 
-    # def get_json(self):
-    #     return json.dumps(self.__dict__)
-
     def get_json(self):
         return {
                 "guid": self._guid,
                 "name": self._name,
-                "order": self._order,
+                "code": self._code,
                 "description": self._description,
-                "controls": {control.guid: control.get_json() for control in self.controls}
+                "controls": {control.guid: control.get_json() for control in self.controls if control is not None}
         }
+
+    def get_control(self, code: str):
+        found_control = next(filter(lambda x: x.code == code, self.controls), None)
+        return found_control
 
 class WidgetSession:
 
@@ -378,17 +410,18 @@ class WidgetSession:
         steps_data = data['data']['steps']
 
         self.current_step = widget_session_data['current_step']
-        self.next_step = widget_session_data['next_step']
-        self._count_steps = widget_session_data['count_steps']
+        # self.next_step = widget_session_data['next_step']
+        # self._count_steps = widget_session_data['count_steps']
         self._code = widget_session_data['code']
         self._name = widget_session_data['name']
         self._status = widget_session_data['status']
         self._description = widget_session_data['description']
         self._async_execute = widget_session_data['async_execute']
+        self.expand_data = widget_session_data['expand_data']
         self._steps = [StepSession(
             guid=step['guid'],
             name=step['name'],
-            order=step['order'],
+            code=step['code'],
             description=step['description'],
             controls=step['controls']
         ) for step in steps_data]
@@ -397,9 +430,9 @@ class WidgetSession:
     def guid(self):
         return self._guid
 
-    @property
-    def count_steps(self):
-        return self._count_steps
+    # @property
+    # def count_steps(self):
+    #     return self._count_steps
 
     @property
     def code(self):
@@ -436,25 +469,31 @@ class WidgetSession:
             "widget": {
                 "guid": self._guid,
                 "current_step": self.current_step,
-                "next_step": self.next_step,
-                "count_steps": self._count_steps,
+                # "next_step": self.next_step,
+                # "count_steps": self._count_steps,
                 "code": self._code,
                 "name": self._name,
                 "status": self._status,
                 "description": self._description,
                 "async_execute": self._async_execute
             },
-            "steps": {step.guid: step.get_json() for step in self._steps}
+            "steps": {step.guid: step.get_json() for step in self._steps} if self._steps is not None else {}
         }
+
+    def get_step(self, code: str) -> StepSession:
+        found_step = next(filter(lambda x: x.code == code, self.steps), None)
+        return found_step
+
+    def get_current_step(self) -> StepSession:
+        found_step = next(filter(lambda x: x.guid == self.current_step, self.steps), None)
+        return found_step
 
 class Response:
 
     def __init__(self,
                  widget_session: WidgetSession,
-                 next_step = 1,
                  status: str = Status.NOTHING) -> None:
         self.widget_session = widget_session
-        self.next_step = next_step
         self.status = status
 
 class Webhook:
