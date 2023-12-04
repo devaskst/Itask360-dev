@@ -17,6 +17,29 @@ class CeleryConfig:
     REDIS_USER = getenv("REDIS_USER_DEV", default='')
     REDIS_PORT = getenv("REDIS_PORT_DEV", default='')
 
+    DB_APPS_HOST = getenv("DB_APPS_HOST", default='pg_db')
+    DB_APPS_PORT = getenv("DB_APPS_PORT", default='5432')
+    DB_APPS_NAME = getenv("DB_APPS_NAME", default='postgres')
+    DB_APPS_USER = getenv("DB_APPS_USER", default='postgres')
+    DB_APPS_PASSWORD = getenv("DB_APPS_PASSWORD", default='secret')
+
+    @property
+    def DB_APPS_CONFIG(self):
+        db_config = {
+            'database': self.DB_APPS_NAME,
+            'user': self.DB_APPS_USER,
+            'password': self.DB_APPS_PASSWORD,
+            'host': self.DB_APPS_HOST,
+            'port': self.DB_APPS_PORT,
+            'max_connections': 32,
+            'stale_timeout': 300,
+            'register_hstore': False,
+            'autocommit': True,
+            'autorollback': True,
+            'autoconnect': False
+        }
+        return db_config
+
     API_TOKEN = getenv("CELERY_API_TOKEN", default='super-secret')
     API_URL = getenv("API_URL", default='http://127.0.0.1/api')
     APPLICATION_GUID = getenv("APPLICATION_GUID", default='')
@@ -29,7 +52,7 @@ class CeleryConfig:
     task_queues = (
         Queue('default',    routing_key='default'),
         Queue(f"webhook/{APPLICATION_GUID}"),
-        Queue(f"application/{APPLICATION_GUID}")
+        Queue(f"applications/{APPLICATION_GUID}")
     )
 
     task_default_queue = 'default'
