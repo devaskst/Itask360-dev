@@ -9,8 +9,12 @@ def init(**kwargs):
     import random
     ws = WidgetSession(guid=kwargs['widget_session_guid'])
     # sale_id = 7
+    
     current_step = ws.get_current_step()
+    print(control.code for control in current_step.controls)
     if current_step.code == 'main-step':
+        alert = current_step.get_control(code='order-name')
+        alert.style = 'success'
         check_box_list = current_step.get_control(code='order-products')
         items = []
         for i in range(10):
@@ -28,6 +32,9 @@ def init(**kwargs):
                             )
                         )
         check_box_list.items = items
+    elif current_step.code == 'step2':
+        pass
+    
     return Response(ws, status=Status.SUCCESS)
 
 @shared_task

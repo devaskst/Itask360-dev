@@ -52,6 +52,8 @@ register_tasks = requests.post(f"{app.conf.API_URL}/register_tasks",
                                                 "webhook_task_codes": webhook_tasks}),
                                headers=app.conf.api_headers,
                                timeout=120)
+
+print(register_tasks.text)
 if register_tasks.status_code != 200 and register_tasks.json()['code'] != 0:
     raise SystemError('Celery not working!')
 
