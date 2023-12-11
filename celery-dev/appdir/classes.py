@@ -289,6 +289,16 @@ class Alert(BaseControl):
         super().__init__(**kwargs)
         self.value = kwargs['value']
         self.default_value = kwargs['default_value']
+        self._header = self._describe.get("header", "")
+
+    @property
+    def header(self):
+        return self._header
+
+    @header.setter
+    def header(self, value: str):
+        self._header = value
+        self._describe['header'] = value
 
     def get_json(self):
         upper_json = super().get_json()
