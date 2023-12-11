@@ -53,10 +53,9 @@ register_tasks = requests.post(f"{app.conf.API_URL}/register_tasks",
 if register_tasks.status_code == 200:
     data = register_tasks.json()['data']
     info = f'''*** Регистрация задач ***
-    Незарегестрированные приложения: {data['applications_not_found']}
     Незарегестрированные виджеты: {data['widget_not_found']}
     Незарегестрированные вебхуки: {data['webhooks_not_found']}'''
-    logging.info(info)
+    print(info)
 else:
     raise SystemError('Celery not working!')
 
