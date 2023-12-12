@@ -427,7 +427,9 @@ class WidgetSession:
         self._status = widget_session_data['status']
         self._description = widget_session_data['description']
         self._async_execute = widget_session_data['async_execute']
+        self._settings = widget_session_data.get('settings', {})
         self.expand_data = widget_session_data['expand_data']
+
         self._steps = [StepSession(
             guid=step['guid'],
             name=step['name'],
@@ -467,6 +469,10 @@ class WidgetSession:
     @property
     def steps(self):
         return self._steps
+
+    @property
+    def settings(self):
+        return self._settings
 
     def __str__(self):
         return f'<WidgetSession: {self.code}>'
