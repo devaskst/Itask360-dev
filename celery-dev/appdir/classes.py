@@ -24,6 +24,7 @@ class Status(Enum):
 class Item:
 
     def __init__(self, **kwargs) -> None:
+        self.id = kwargs.get('id', None)
         self.value = kwargs['value']
         self.checked = kwargs['checked']
         self.style = kwargs['style']
@@ -44,11 +45,12 @@ class TreeItem(Item):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.expand = kwargs.get("expand", False)
-        self.children = ([TreeItem(**kwd) for kwd in kwargs.get("children")] 
+        self.children = ([TreeItem(**kwd) for kwd in kwargs.get("children")]
                          if isinstance(kwargs.get("children"), list) else [])
 
     def get_json(self):
         return {
+            "id": self.id,
             "value": self.value,
             "checked": self.checked,
             "style": self.style,
