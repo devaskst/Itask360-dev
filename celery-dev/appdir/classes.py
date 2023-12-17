@@ -524,6 +524,31 @@ class Webhook:
         self.status = kwargs['status']
         self.status_description = kwargs.get('status_description', None)
         self.data = kwargs['data']
+        self.settings = self._get_settings()
+
+    def _get_settings(self) -> dict:
+        s = requests.Session()
+        retry_strategy = Retry(
+            total=5,
+            backoff_factor=0.1,
+            status_forcelist=[500,502,503,504]
+            )
+        s.mount(f'{API_URL}', HTTPAdapter(max_retries=retry_strategy))
+        request = s.post(
+            url=f"{API_URL}/celery/get_settings",
+            json={"app_guid": self.app_guid,
+                  "account_guid": self.account_guid},
+            headers={"Authorization": f"Bearer {API_TOKEN}"},
+            timeout=1
+        )
+
+        if request.status_code != requests.codes.ok:
+            # TODO обсудить логгирование критических ошибок
+            logging.critical("API not working!")
+            raise SystemError('API not working!')
+        data = request.json()
+        settings = data.get('settings', {})
+        return settings
 
     def __str__(self) -> str:
         return f'<Webhook: {self.requestId}>'
