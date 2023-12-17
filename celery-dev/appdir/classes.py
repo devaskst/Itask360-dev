@@ -541,12 +541,11 @@ class Webhook:
             headers={"Authorization": f"Bearer {API_TOKEN}"},
             timeout=1
         )
-
         if request.status_code != requests.codes.ok:
             # TODO обсудить логгирование критических ошибок
             logging.critical("API not working!")
             raise SystemError('API not working!')
-        data = request.json()
+        data = request.json()['data']
         settings = data.get('settings', {})
         return settings
 
