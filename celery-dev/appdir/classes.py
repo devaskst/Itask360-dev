@@ -101,7 +101,7 @@ class BaseControl:
                 "guid": self._guid,
                 "name": self._name,
                 "code": self._code,
-                "description": self._description,
+                "description": self.description,
                 "describe": self._describe,
                 "alert": self.alert,
                 "alert_style": self.alert_style,
