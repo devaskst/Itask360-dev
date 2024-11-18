@@ -64,7 +64,7 @@ class BaseControl:
         self._guid = kwargs['guid']
         self._name = kwargs['name']
         self._code = kwargs['code']
-        self._description = kwargs['description']
+        self.description = kwargs['description']
         self._describe = kwargs['describe'] if kwargs['describe'] is not None else {}
         self.alert = kwargs['alert']
         self.alert_style = kwargs['alert_style']
@@ -90,10 +90,6 @@ class BaseControl:
     def order(self):
         return self._order
 
-    @property
-    def description(self):
-        return self._description
-
     def __str__(self) -> str:
         return f'<{self.__class__.__name__}: {self.name}>'
 
@@ -105,7 +101,7 @@ class BaseControl:
                 "guid": self._guid,
                 "name": self._name,
                 "code": self._code,
-                "description": self._description,
+                "description": self.description,
                 "describe": self._describe,
                 "alert": self.alert,
                 "alert_style": self.alert_style,
